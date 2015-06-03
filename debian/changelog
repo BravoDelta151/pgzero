@@ -1,0 +1,5 @@
+pgzero (1.0.1-1) jessie; urgency=low
+
+  * Initial release
+
+ -- Serge Schneider <serge@raspberrypi.org>  Wed, 03 Jun 2015 15:45:17 +0100
