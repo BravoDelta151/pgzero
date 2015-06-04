@@ -12,7 +12,7 @@ X-Python3-Version: >= 3.2
 
 Package: python3-pgzero
 Architecture: any
-Depends: ${misc:Depends}, ${python3:Depends}, python3-pygame
+Depends: ${misc:Depends}, ${python3:Depends}, python3-pygame, python3-pkg-resources
 Description: Zero-boilerplate games programming framework based on Pygame (Python 3)
  Pygame zero is intended for use in education, so that teachers can teach basic
  programming without needing to explain the Pygame API or write an event loop.
