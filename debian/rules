@@ -3,7 +3,8 @@
 
 #export DH_VERBOSE=1
 
-export PYBUILD_NAME = pgzero
+export PYBUILD_NAME=pgzero
+export PYBUILD_DISABLE=test
 
 
 %:
