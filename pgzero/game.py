@@ -1,5 +1,6 @@
 import sys
 import operator
+import time
 
 import pygame
 import pgzero.clock
@@ -13,6 +14,24 @@ screen = None
 DISPLAY_FLAGS = 0
 
 
+def exit():
+    """Wait for up to a second for all sounds to play out
+    and then exit
+    """
+    t0 = time.time()
+    while pygame.mixer.get_busy():
+        time.sleep(0.1)
+        if time.time() - t0 > 1.0:
+            break
+    sys.exit()
+
+
+def positional_parameters(handler):
+    """Get the positional parameters of the given function."""
+    code = handler.__code__
+    return code.co_varnames[:code.co_argcount]
+
+
 class PGZeroGame:
     def __init__(self, mod):
         self.mod = mod
@@ -23,7 +42,6 @@ class PGZeroGame:
         self.icon = None
         self.keyboard = pgzero.keyboard.keyboard
         self.handlers = {}
-        self.reinit_screen()
 
     def reinit_screen(self):
         global screen
@@ -56,6 +74,7 @@ class PGZeroGame:
         pygame.MOUSEMOTION: 'on_mouse_move',
         pygame.KEYDOWN: 'on_key_down',
         pygame.KEYUP: 'on_key_up',
+        constants.MUSIC_END: 'on_music_end'
     }
 
     EVENT_PARAM_MAPPERS = {
@@ -64,6 +83,8 @@ class PGZeroGame:
     }
 
     def load_handlers(self):
+        from .spellcheck import spellcheck
+        spellcheck(vars(self.mod))
         self.handlers = {}
         for type, name in self.EVENT_HANDLERS.items():
             handler = getattr(self.mod, name, None)
@@ -100,7 +121,21 @@ class PGZeroGame:
 
         def prep_args(event):
             return {name: get(event) for name, get in param_handlers}
-        return lambda event: handler(**prep_args(event))
+
+        def new_handler(event):
+            try:
+                prepped = prep_args(event)
+            except ValueError:
+                # If we couldn't construct the keys/mouse objects representing
+                # the button that was pressed, then skip the event handler.
+                #
+                # This happens because Pygame can generate key codes that it
+                # does not have constants for.
+                return
+            else:
+                return handler(**prepped)
+
+        return new_handler
 
     def dispatch_event(self, event):
         handler = self.handlers.get(event.type)
@@ -150,6 +185,8 @@ class PGZeroGame:
 
     def run(self):
         clock = pygame.time.Clock()
+        self.reinit_screen()
+
         update = self.get_update_func()
         draw = self.get_draw_func()
         self.load_handlers()
@@ -167,9 +204,9 @@ class PGZeroGame:
                     if event.key == pygame.K_q and \
                             event.mod & (pygame.KMOD_CTRL | pygame.KMOD_META):
                         sys.exit(0)
-                    self.keyboard[event.key] = True
+                    self.keyboard._press(event.key)
                 elif event.type == pygame.KEYUP:
-                    self.keyboard[event.key] = False
+                    self.keyboard._release(event.key)
                 self.dispatch_event(event)
 
             pgzclock.tick(dt)
